@@ -1,4 +1,5 @@
-# Machine Learning Predicts Yeast Growth
+
+# A Multi-omic and Mechanism-aware Machine Learning Pipeline Predicts Growth Rate in Saccharomyces cerevisiae
 
 ## Objective 
 
