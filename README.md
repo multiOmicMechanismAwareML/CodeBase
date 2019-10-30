@@ -34,19 +34,22 @@ Machine learning and deep learning techniques are applied to produce predictive 
 
 ### Metabolic Modelling 
 
-The metabobolic modelling code is run in Matlab Code/metabolic_modelling/RUN.m 
+The metabobolic modelling code is run in Matlab (version R2015b) - Code/metabolic_modelling/RUN.m 
 
 This will automatically start the FBA process using the msbData and the yeastmmm.mat metabolic model 
 
-### Deep Learning 
+The captured flux levels can then be extracted and used to create a complete dataset (see the example in Code/learning/Data
 
-In order to run the deep learning models two three zip files need to be extracted: 
+
+### Deep Learning Approach
+
+In order to run the deep learning models two zip files need to be extracted: 
 
 Code/learning/Data/CompleteDataset.csv
 
 Code/learning/Data/Reduced_Dataset.csv
 
-### Requirements:
+#### Requirements:
 
 Python 3.5
 
@@ -65,6 +68,12 @@ Matplotlib 3.1.1
 
 To run the deep learning models - once these datasets have been extracted - simply run the python file Code/learning/DeepLearningFullSet.py to see the set of results. 
 
+
+### Tradtional Machine Learning Approaches
+
+The R file Code/learning/machineLearning.R contains the feature selection and traditional machine learning approaches (random forest and support vector regression models) which can be run by first setting your workstation to point its data collection to Code/learning/Data and then running the complete code. 
+
+This code requires that the libraries listed at the top of the code first be installed to ensure it runs to completion.
 
 
 
