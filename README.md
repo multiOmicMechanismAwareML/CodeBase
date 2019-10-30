@@ -45,25 +45,25 @@ The captured flux levels can then be extracted and used to create a complete dat
 
 In order to run the deep learning models two zip files need to be extracted: 
 
-\t Code/learning/Data/CompleteDataset.csv
+* Code/learning/Data/CompleteDataset.csv
 
-\t Code/learning/Data/Reduced_Dataset.csv
+* Code/learning/Data/Reduced_Dataset.csv
 
 #### Requirements:
 
-\t Python 3.5
+* Python 3.5
 
-\t Tensorflow 2.0 
+* Tensorflow 2.0 
 
-\t Keras 2.0
+* Keras 2.0
 
-\t Numpy 1.5
+* Numpy 1.5
 
-\t Pandas 0.25
+* Pandas 0.25
 
-\t Seaborn 0.9
+* Seaborn 0.9
 
-\t Matplotlib 3.1.1
+* Matplotlib 3.1.1
 
 
 To run the deep learning models - once these datasets have been extracted - simply run the python file Code/learning/DeepLearningFullSet.py to see the set of results. 
