@@ -43,11 +43,13 @@ The captured flux levels can then be extracted and used to create a complete dat
 
 ### Deep Learning Approach
 
-In order to run the deep learning models two zip files need to be extracted: 
+In order to run the deep learning models three zip files need to be extracted: 
 
 * Code/learning/Data/CompleteDataset.csv
 
 * Code/learning/Data/Reduced_Dataset.csv
+
+* Code/learning/Data/features.csv
 
 #### Requirements:
 
