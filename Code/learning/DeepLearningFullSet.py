@@ -1,25 +1,17 @@
 import csv
-from keras.callbacks import EarlyStopping
 import tensorflow as tf
+from tensorflow.keras.callbacks import EarlyStopping
 import numpy as np
 import pandas as pa
 import os.path
-from keras.utils import np_utils
-import keras.callbacks
 import matplotlib.pyplot as plts
 import seaborn as sns
 from keras.models import Sequential, Model
 from keras.layers.core import Dense, Dropout, Activation
-import matplotlib.pyplot
-import keras.backend as k
-from keras.layers.advanced_activations import LeakyReLU
 from keras.layers import Concatenate, Input
 from keras.optimizers import SGD
 from keras.constraints import max_norm
-from sklearn.model_selection import train_test_split
-from keras.callbacks import Callback
 from sklearn import preprocessing
-import matplotlib.pyplot
 from keras.utils import plot_model
 
 def garson(A, B):
@@ -57,36 +49,60 @@ def remove_zero_entry_columns(data):
 #Name of the row we are trying to predict (growth rate)
 TARGET_NAME = 'log2relT'
 
-with open('data/testing_index.csv', 'r') as csvfile:
+
+with open('testing_index.csv', 'r') as csvfile:
     testing_index = []
     for row in csv.reader(csvfile, delimiter=';'):
         testing_index.append(row[0]) # careful here with [0]
 #Load the data removing any
 full_data = pa.read_csv('data/completeDataset.csv')
 check_file_read_ok(full_data, "full data")
-full_data = remove_zero_entry_columns(full_data)
 
+# Here we extract the features highlighted by the genetic algorithm
+def get_the_genetic_algo_data():
+    gens = []
+    features = pa.read_csv("data/genetic_feature_selection_features.csv")
+    for x in range(features.shape[0]):
+        fet = features.iloc[[0]].values[1:]
+        gens.append(full_data[fet])
+    return gens
+
+gens = get_the_genetic_algo_data()
+
+full_data = remove_zero_entry_columns(full_data)
 expression_data = pa.read_csv('data/expressionOnly.csv')
 check_file_read_ok(expression_data, "expression data")
 expression_data = remove_zero_entry_columns(expression_data)
 
 metabolic_expression_data = pa.read_csv('data/metabolic_gene_data.csv')
 check_file_read_ok(metabolic_expression_data, "met_expression data")
+
 #Extract the target and drop target column from main data
 target_data = full_data[TARGET_NAME]
 full_data = full_data.drop(columns=TARGET_NAME)
 expression_data = expression_data.drop(columns=TARGET_NAME)
 #metabolic_expression = metabolic_expression.drop(columns=TARGET_NAME)
 
-iRF = pa.read_csv('data/iRFData.csv')
+iRF = pa.read_csv('data/Features_Extracted_Using_iRF.csv', header = None)
+iRF.columns = ['Genes']
 check_file_read_ok(iRF, "iRF data")
 iRF = remove_zero_entry_columns(iRF)
+iRF = full_data[iRF.Genes]
+print(iRF.shape, full_data.shape)
 
-sgl = pa.read_csv('data/sglData.csv')
+
+sgl = pa.read_csv('data/Features_Extracted_Using_SGL.csv')
+sgl.columns = ['Genes']
 check_file_read_ok(sgl, "sgl data")
+sgl_list= []
+for x in sgl.Genes:
+    if x in full_data.columns:
+        sgl_list.append(x)   #We do this because some of the zero features have been removed from full_data
 
-
+sgl = full_data[sgl_list]
 genes = full_data['Row']
+
+
 full_data = full_data.drop(columns = 'Row')
 reaction_data = full_data.drop(columns = expression_data.columns.values)
 
@@ -150,7 +166,7 @@ reaction_data_train, reaction_data_test = reaction_data.drop(reaction_data.index
 target_data_train, target_data_test = target_data.drop(target_data.index[testing_index]), target_data.iloc[testing_index]
 iRF_train, iRF_test = iRF.drop(iRF.index[testing_index]), iRF.iloc[testing_index, :]
 sgl_train, sgl_test = sgl.drop(sgl.index[testing_index]), sgl.iloc[testing_index, :]
-
+print(sgl_train.shape, 'SGL')
 #Preprocessing the data to mean of zero and unit variance - stopped using this for improved results
 full_scaler = preprocessing.StandardScaler().fit(full_data_train)
 full_data_scaled_train = full_scaler.transform(full_data_train).astype(np.float32)
@@ -235,7 +251,8 @@ if not os.path.exists("models/NSGA-II_model.h5"):
     min_score = [9999999,0]
     best_fs_model = None
     for x in range(9):
-        next = pa.read_csv("data/genfs" + str(x + 1) + ".csv")
+        next = gens[x]
+        print(next.shape)
         next_train, next_test = next.drop(next.index[testing_index]), next.iloc[testing_index, :]
         scale = preprocessing.StandardScaler().fit(next_train)
         next_scale_train = scale.transform(next_train).astype(np.float32)
@@ -267,6 +284,7 @@ if not os.path.exists("predictions/iRF_DL_predictions.csv"):
 
 model_SGL = init_model(sgl_scaled_train.shape[1], lrate, 3000, 0.75, 1000)
 if not os.path.exists("models/SGL_model.h5"):
+        print('IN HERE')
         model_SGL.fit(x = sgl_scaled_train, y = target_train, epochs=epochs, batch_size=batches, validation_split=validation)
         model_SGL.save_weights("models/SGL_model.h5")
 else :
@@ -349,7 +367,7 @@ if not os.path.exists("predictions/MM-Flu_GEM_DL_Predictions.csv"):
     np.savetxt(fname="predictions/MM-Flu_GEM_DL_Predictions.csv", X = predictions, delimiter=',')
 
 
-if not os.path.exists("layer_examine_full.png"):
+if not os.path.exists("layer_examine_full.pdf"):
     plts.figure()
     weights = multi_model_full_expression.get_layer(name = "last_hidden").get_weights()[0]
     output = multi_model_full_expression.layers[-1].get_weights()
@@ -358,14 +376,20 @@ if not os.path.exists("layer_examine_full.png"):
     res = garson(weights, output)
     sns.set(color_codes=True)
     sns.set_style('white')
-    ax = sns.distplot(res[1:1000], bins=150, hist=False, rug=True, label='Linked to RFl Model')
-    ax2 = sns.distplot(res[1001:], bins=150, hist=False, rug=True, label="Linked to GE Model")
+    ax = sns.distplot(res[1:1000], bins=30, hist=True, rug=False, label='MF network', hist_kws={'range': [0, 0.003]})
+    ax = sns.distplot(res[1001:], bins=30, hist=True, rug=False, label="GE network", hist_kws={'range': [0, 0.003]})
     ax.grid(False)
-    ax2.grid(False)
-    plts.savefig("layer_examine_full.png")
+    ax.set(xticks=np.arange(0,0.003,0.0005))
+    ax.set_xlabel('Weight', fontsize=13, fontweight='bold')
+    ax.set_ylabel('Absolute frequency', fontsize=13, fontweight='bold')
+    ax.set_title('MMDNN weight distribution - GE and MF', fontdict={'fontsize': 15, 'fontweight': 'bold'})
+#    ax2.grid(False)
+    plts.legend(fontsize=13)
+    fig = ax.get_figure()
+    fig.savefig("layer_examine_full.pdf", format='pdf', dpi=600)
     plts.clf()
 
-if not os.path.exists("layer_examine_met.png"):
+if not os.path.exists("layer_examine_met.pdf"):
     plts.figure()
     weights = multi_model_metabolic_expression.get_layer(name = "last_hidden").get_weights()[0]
     output = multi_model_metabolic_expression.layers[-1].get_weights()
@@ -374,11 +398,17 @@ if not os.path.exists("layer_examine_met.png"):
     res = garson(weights, output)
     sns.set(color_codes=True)
     sns.set_style('white')
-    ax = sns.distplot(res[1:1000], bins=150, hist=False, rug=True, label='Linked to RFl Model')
-    ax2 = sns.distplot(res[1001:], bins=150, hist=False, rug=True, label="Linked to GE Model")
+    ax = sns.distplot(res[1:1000], bins=35, hist=True, rug=False, label='MF network', hist_kws={'range': [0, 0.0035]})
+    ax = sns.distplot(res[1001:], bins=35, hist=True, rug=False, label="MGE network", hist_kws={'range': [0, 0.0035]})
     ax.grid(False)
-    ax2.grid(False)
-    plts.savefig("layer_examine_met.png")
+    ax.set(xticks=np.arange(0,0.004,0.0005))
+    ax.set_xlabel('Weight', fontsize=13, fontweight='bold')
+    ax.set_ylabel('Absolute frequency', fontsize=13, fontweight='bold')
+    ax.set_title('MMDNN weight distribution - MGE and MF', fontdict={'fontsize': 15, 'fontweight': 'bold'})
+#    ax2.grid(False)
+    plts.legend(fontsize=13)
+    fig = ax.get_figure()
+    fig.savefig("layer_examine_met.pdf", format='pdf', dpi=600)
     plts.clf()
 
 
