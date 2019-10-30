@@ -32,5 +32,27 @@ Machine learning and deep learning techniques are applied to produce predictive 
 
 ## Files
 
-The deep learning techniques were applied using Python and are found in the Code folder. All other techniques applied were done so using R and can be found in the machineLearning.R file also inside the Code folder.
+In order to run the deep learning models two three zip files need to be extracted: 
+
+Code/learning/Data/CompleteDataset.csv
+Code/learning/Data/Reduced_Dataset.csv
+
+Requirements:
+
+Python 3.5
+Tensorflow 2.0 
+Keras 2.0
+Numpy 1.5
+Pandas 0.25
+Seaborn 0.9
+Matplotlib 3.1.1
+
+
+To run the deep learning models - once these datasets have been extracted - simply run the python file DeepLearningFullSet.py to see the set of results. 
+
+
+
+
+
+
 
