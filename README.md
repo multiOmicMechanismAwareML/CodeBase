@@ -38,32 +38,32 @@ The metabobolic modelling code is run in Matlab (version R2015b) - Code/metaboli
 
 This will automatically start the FBA process using the msbData and the yeastmmm.mat metabolic model 
 
-The captured flux levels can then be extracted and used to create a complete dataset (see the example in Code/learning/Data
+The captured flux levels can then be extracted and used to create a complete dataset (see our experiment example in Code/learning/Data)
 
 
 ### Deep Learning Approach
 
 In order to run the deep learning models two zip files need to be extracted: 
 
-Code/learning/Data/CompleteDataset.csv
+\t Code/learning/Data/CompleteDataset.csv
 
-Code/learning/Data/Reduced_Dataset.csv
+\t Code/learning/Data/Reduced_Dataset.csv
 
 #### Requirements:
 
-Python 3.5
+\t Python 3.5
 
-Tensorflow 2.0 
+\t Tensorflow 2.0 
 
-Keras 2.0
+\t Keras 2.0
 
-Numpy 1.5
+\t Numpy 1.5
 
-Pandas 0.25
+\t Pandas 0.25
 
-Seaborn 0.9
+\t Seaborn 0.9
 
-Matplotlib 3.1.1
+\t Matplotlib 3.1.1
 
 
 To run the deep learning models - once these datasets have been extracted - simply run the python file Code/learning/DeepLearningFullSet.py to see the set of results. 
