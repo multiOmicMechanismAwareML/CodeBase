@@ -303,10 +303,7 @@ ggplot(data = sols, aes(x = sols$RMSE, y = sols$No.Features, color = as.factor(s
 justPareto <- sols[which(sols$`Pareto front` == 1),]
 ggplot(data = justPareto , aes(x = justPareto$RMSE, y = justPareto$No.Features)) + labs(x = "RMSE", y = "#Features") + geom_line()
 
-####Boruta confirmed######################
 
-
-borutaIndicies <- which(colnames(trainingData) %in% boruta.confirmed)
 
 
 ################################################################################################################
@@ -345,24 +342,6 @@ iRFResults <- unique(str_replace(iRFResults, "\\*", "_"))  #turn back to correct
 iRFColumnIndicies <- which(colnames(trainingData) %in% iRFResults)
 
 
-###############################################################################################################
-# LASSO #######################################################################################################
-
-#run a lasso across 100 lambda values 
-lassoFullData <- cv.glmnet(trainingDataNum , growth, family = "gaussian", alpha = 1, nlambda = 100)
-#lassoExpressionData <- cv.glmnet(expressionDataAsMatrix , growth, family = "gaussian", alpha = 1, nlambda = 100)
-
-#fit the lasso results 
-lassoFullDataResults <- glmnet(x = trainingDataNum , y = trainingTargetNum, family ="gaussian", alpha = 1 , lambda = lassoFullData$lambda.1se)
-#lassoExpressionDataResults <- glmnet(x = expressionDataAsMatrix, y = growth, family ="gaussian", alpha = 1 , lambda = lassoExpressionData$lambda.1se)
-
-
-selectedUsinglassoFull <- colnames(trainingDataNum[1,abs(lassoFullDataResults$beta[,1]) > 0])
-#selectedUsinglassoExpression <- colnames(expressiondataAsNum[1,lassoExpressionDataResults$beta[,1] > 0])
-
-reducedFullData <- trainingDataNum[,selectedUsinglassoFull]
-#reducedExpressionData <- training[,selectedUsinglassoExpression]
-
 #########################################################################################
 #Machine Learning #######################################################################
 #########################################################################################
@@ -370,61 +349,6 @@ reducedFullData <- trainingDataNum[,selectedUsinglassoFull]
 #Creating control setting 10 fold cross validation repeated 3 times 
 ctr <- trainControl(method = "repeatedcv", number = 5, repeats =  3, verboseIter = FALSE)
 
-
-#########################################################################################
-#Gradient Boosting Machine ##############################################################
-
-#Grid of parameters explored
-gbmGrid <-  expand.grid(interaction.depth = c(1, 5, 9), 
-                        n.trees = (1:10)*50, 
-                        shrinkage = c(0.1,0.25),
-                        n.minobsinnode = 20)
-
-gbmFullData <- train(reducedFullData, growth,
-                     method = "gbm",
-                     trControl = ctr,
-                     preProc = c("center","scale"),
-                     verbose = F,
-                     tuneGrid = gbmGrid,
-                     savePredictions = "final"
-                     )
-
-gbmJustExpressionData <- train(reducedExpressionData, growth,
-                     method = "gbm",
-                     verbose = F,
-                     trControl = ctr,
-                     preProc = c("center","scale"),
-                     tuneGrid = gbmGrid,
-                     savePredictions = "final"
-)
-
-#xgboost is faster to run than the above 
-xgb_grid_1 = expand.grid(
-  nrounds = 200,
-  max_depth = c(2, 4,10, 16),
-  eta = c(0.1, 0.01, 0.001),
-  gamma = c(0, 0.5),
-  colsample_bytree = c(0.5, 1),
-  min_child_weight = 1,
-  subsample = c( 0.75, 1) 
-)
-
-xgb <- xgboost(data = as.matrix(trainingData),
-               label = trainingTarget,
-               max_depth = 3,
-               eta = 0.01,
-               nthread = 6, 
-               nrounds = 4000,
-               colsample_bylevel = 0.02,
-               objective = "reg:linear", 
-               verbose = 1)
-
-
-#Predictions vs actual, plotting the results 
-pred <- predict(xgb, as.matrix(testingData))
-postResample(pred, testingTarget)
-gbmfullplot <- ggplot(gbmFullData) + ggtitle("Full Data GBM")
-gbmexpressionplot <- ggplot(gbmJustExpressionData)+ ggtitle("Expression Data Only GBM")
 
 ########################################################################################
 #SVM Gaussian ##########################################################################
@@ -650,185 +574,6 @@ rfsglPredictions <- predict(rfsglSelected$finalModel, newdata = normalisedTestDa
 rfsglRMSE <- sqrt(mse(rfsglPredictions, testingTarget ))
 
 
-
-
-
-##########################################################################################
-#Neural Net ##############################################################################
-
-hiddenLayers <- c(2 : 4) #The number of hidden layers 2 .. 5 total layers 
-numOfEpochs <- 150 #Number of epochs per training run (passes through the data)
-numTry <- 100 #Number of sets of parameters to try
-
-results <- data.frame(neurons = rep(0,numTry),  #Building a table of results
-                      hiddenLayers = rep(0,numTry),
-                      dropout = rep(0,numTry),
-                      l1 = rep(0, numTry),
-                      l2 = rep(0, numTry),
-                      learningRate = rep(0,numTry),
-                      decay = rep(0, numTry),
-                      score = rep(0,numTry))
-
-trainingDataInNN <- as.matrix(trainingData)
-testingDataInNN <- as.matrix(testingData)
-numberOfFeatures <- ncol(trainingDataInNN)  # Getting the number of features 
-
-
-for (t in c(1 : numTry)){ #Try numTry number of parameter combinations 
- 
-  neuron <- sample(10:200, 1) #Sampling from the possible neurons
-  drop <- round(runif(1, 0, 0.5), digits = 3) #Selecting a dropout rate from 0..0.5 (3 d.p)
-  l_1 <- round(10^-(runif(1, 0, 3)), digits = 3) #Selecting an L1 rate 10^x, where x is a random float between 0 and 3 
-  l_2 <- round(10^-(runif(1, 0, 3)), digits = 3) #Selecting an L2 rate 10^x, where x is a random float between 0 and 3
-  learningRate <- round(10^-(runif(1, 2, 5)), digits = 8)  #Selecting an Learning rate 10^x, where x is a random float between 3 and 7
-  hiddenLayer <- sample(hiddenLayers, 1) #Select the number of hidden layers
-  dec <- learningRate / numOfEpochs
-  
-  print (c(neuron, drop, l_1, l_2, learningRate, hiddenLayer, dec))
-
-  #Creating 10 fold cross validation indexes
-  flds <- createFolds(trainingDataInNN[,1], k = 5, list = TRUE, returnTrain = FALSE)
-  scoresFromParams <- NULL
-  
-  for (i in 1: length(flds)){  #Run through all the folds created building a model on each sets of data points 
-    
-    train <- trainingDataInNN[-unlist(flds[i]),] #Select the training data based on fold indexes 
-    trainTarget <- growthTrain[-unlist(flds[i]), 1]
-    test <- trainingDataInNN[unlist(flds[i]),] #Select the test data based on fold indexes 
-    testTarget <- growthTrain[unlist(flds[i]), 1]
-    
-    model <- keras_model_sequential() # Init the model 
-          #For some reason I can't add hidden layers in a for loop so this is the work around 
-          if (hiddenLayer == 0){
-            model <- model %>%
-              layer_dense(units = neuron, input_shape = numberOfFeatures, activation = 'relu') %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dense(activation = 'linear', units = 1)
-          }
-          if (hiddenLayer == 1) {
-            model <- model %>%
-              layer_dense(units = neuron, input_shape = numberOfFeatures, activation = 'relu') %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dense(activation = 'linear', units = 1)
-          }
-          
-          if (hiddenLayer == 2) {
-            model <- model %>%
-              layer_dense(units = neuron, input_shape = numberOfFeatures, activation = 'relu') %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dense(activation = 'linear', units = 1)
-          }
-          if (hiddenLayer == 3) {
-            model <- model %>%
-              layer_dense(units = neuron, input_shape = numberOfFeatures, activation = 'relu') %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dense(activation = 'linear', units = 1)
-          }
-          if (hiddenLayer == 4) {
-            model <- model %>%
-              layer_dense(units = neuron, input_shape = numberOfFeatures, activation = 'relu') %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dropout(rate = drop)  %>%
-              layer_dense(activation = 'relu', units = neuron, regularizer_l1_l2(l1 = l_1, l2 = l_2  )) %>%
-              layer_dense(activation = 'linear', units = 1)
-          }
-      
-          model %>% compile( #Set the learning rule and optimiser
-            optimizer = optimizer_rmsprop(lr = learningRate, decay = dec),
-            loss = 'mse',
-            metrics = c('accuracy')
-          )
-
-          #Train the model on the training data in the fold 
-          history <- model %>% fit (trainingDataInNN, trainTarget, batch_size = 256, epochs = numOfEpochs,  validation_split = 0.2)
-          #Test the model on the testing data in the fold 
-          score <- model %>% evaluate(testingDataInNN, testTarget, batch_size = 256)
-          
-          print("below is run score")
-          print(sqrt(score))
-          #Add the score to the set of scores for these sets of parameters (on all 10 folds)
-          scoresFromParams <- c(scoresFromParams, sqrt(score))
-          print(scoresFromParams)
-
-  }
-      #Take the average score across all of the folds 
-       aveScore <- mean(scoresFromParams)
-       #Add the results to the results table 
-       res <- c(neuron, hiddenLayer + 1,drop, l_1, l_2, learningRate, dec ,  aveScore)
-       results[t,] <- res
-       print(results)
-       
-}
-      
-names(results)<-c("neurons","hiddenLayers", "dropout", "L_1", "L_2", "learningRate", "decay" , "score")
-
-################## Training on the chosen params #######################################################
-    
-
-resultsFromFinalModel <- c(0.11)
-for (x in c(1:100)){
-  folds <- cut(sample(1:nrow(normalisedTrainingData)), breaks = 5, label = F )
-  scores <- data.frame(
-    epoch = seq(1:ncol(scores)),
-    validation_mae = apply(scores, 2, mean)
-  )
-  scores <- NA
-  for (i in c(1:5)){
-    dataind <- which(folds == i, arr.ind = T)
-    tdata <- normalisedTrainingData[dataind,]
-    vdata <- normalisedTrainingData[-dataind,]
-    ttest <- trainingTarget[dataind]
-    vtest <- trainingTarget[-dataind]
-    model <- keras_model_sequential()  %>%
-      layer_dense(units = 76, input_shape = c(6889), activation = 'relu') %>%
-      layer_dense(activation = 'relu', units = 76, regularizer_l1_l2(l1 = 0.007, l2 = 0.004   ))  %>%
-      layer_dropout(rate = 0.034)  %>%
-      layer_dense(activation = 'relu', units = 76, regularizer_l1_l2(l1 = 0.007, l2 = 0.004   )) %>%
-      layer_dropout(rate = 0.034)  %>%
-      layer_dense(activation = 'relu', units = 76, regularizer_l1_l2(l1 = 0.007, l2 = 0.004   )) %>%
-      layer_dropout(rate = 0.034)  %>%
-      layer_dense(activation = 'relu', units = 76, regularizer_l1_l2(l1 = 0.007, l2 = 0.004   )) %>%
-      layer_dense(activation = 'linear', units = 1)
-    model %>% compile( #Set the learning rule and optimiser
-      optimizer = optimizer_rmsprop(lr = 0.00043532, decay = 2.902133e-06),
-      loss = 'mse',
-      metrics = c('mse')
-    )
-
-
-#Train the model on the training data in the fold 
-  history <- model %>% fit(as.matrix(tdata), as.matrix(ttest), batch_size = 1, epochs = 200, verbose = 0,
-                           validation_data = list(as.matrix(vdata), as.matrix(vtest)))
-  scores <- rbind(scores, history$mean_absolute_error)
- }
-predictions <- model %>% predict(as.matrix(normalisedTestData) , batch_size = 1)
-finalRMSE <- sqrt(mse(predictions[-11,], as.matrix(testingTarget[-11] )))
-
-}
-
-fullDataVsExpressionOnly <- data.frame(t, resultsFromFinalModel)
-names(fullDataVsExpressionOnly) <- c("full", "expression only")
-
-save_model_hdf5(model, "expressionDataOnlyNNKerasModel")
 
 
 ##############Graphing the predictions 

@@ -9,6 +9,9 @@ load('ixs_geni_sorted_by_length.mat');
 load('msbdataAltered.mat'); 
 load('growthRatesMSB.mat');
 
+changeCobraSolver('pdco', 'LP');
+changeCobraSolver('pdco', 'QP');
+
 growthLoc = 3487; %(BIOMASS rxn index))
 
 growthReactName = model.rxns(growthLoc);

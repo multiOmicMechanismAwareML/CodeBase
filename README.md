@@ -1,82 +1,95 @@
-
-# A Multi-omic and Mechanism-aware Machine Learning Pipeline Predicts Growth Rate in Saccharomyces cerevisiae
+# A mechanism-aware and multi-omic machine learning pipeline characterises yeast cell growth
 
 ## Objective 
 
-To leverage strain-specific metabolic modelling coupled with gene expression data to produce predictive models for Yeast growth.
+This code uses strain-specific metabolic modelling coupled with gene expression data to produce predictive models for yeast growth.
+
+
+## Workflow
 
 **Step one:**
 
-msb145172 dataset (Duibhir et al., 2014) is used with Metrade to create strain-specific metabolic models through altering the reaction upper and lower bound constraints inside a metabolic model. 
+The msb145172 dataset (Duibhir et al., 2014) is used to create strain-specific metabolic models through tailoring microarray-based constraints on a baseline metabolic model. 
 
 **Step two:**
 
-Min-norm flux balance analysis is run to produce a simulated cell network from which the reaction flux rates are extracted
+Norm-2 regularised flux balance analysis is utilised to simulate the metabolic activity and obtain strain-specific reaction fluxes.
 
 **Step three:**
 
-Feature selection techniques are applied, we explore three state-of-the-art techniques :
+Feature selection techniques are applied. We explore three state-of-the-art techniques:
 
-* NSGA-II - A genetic algorithm that allows for multiple objectives
-* Sparse group lasso - A regularisation technique which promotes group sparsity
-* Iterative random forest - Selected for its abilit to account for non-linear interations 
+* NSGA-II - a genetic algorithm that allows for multiple objectives
+* Sparse group lasso - a regularisation technique for grouped variables which promotes group sparsity
+* Iterative random forest - accounting for non-linear interations among variables
 
 **Step four:**
 
-Machine learning and deep learning techniques are applied to produce predictive models for both the reduced feature data, single-omics and concatenated using early, intermediate and late data integration techniques. We explore: 
+Machine learning and deep learning techniques are applied to produce predictive models for yeast growth, starting from gene expression, metabolic flux and both together. We use early, intermediate and late data integration, exploring the following baseline methods: 
 
-* Random forest - The standard setup for the datasets and also a late integration bagged vote model 
-* Deep Learning - both a two layer feed forward network and a multi-modal network trained on separate omics 
-* Support vector regression - We also explore a the Bayesian Efficient Multiple Kernel Learning algorithm as a multimodal option when combining two single omic datasets. 
+* Support vector regression
+* Random forest 
+* Deep neural networks 
+
+Their multi-view counterparts are:
+
+* Bayesian efficient multiple kernel learning
+* Bagged random forest
+* Multi-modal deep neural networks
 
 
-## Files
+## Files and requirements
 
 ### Metabolic Modelling 
 
-The metabobolic modelling code is run in Matlab (version R2015b) - Code/metabolic_modelling/RUN.m 
+The metabobolic modelling code is in [Code/metabolic_modelling](Code/metabolic_modelling) and has been tested in Matlab R2015b. 
 
-This will automatically start the FBA process using the msbData and the yeastmmm.mat metabolic model 
+To calculate the metabolic fluxes for all yeast strains, run RUN.m. This will automatically start the FBA process using the gene expression data in msbdataAltered.mat and the metabolic model in yeastmm.mat. 
 
-The captured flux levels can then be extracted and used to create a complete dataset (see our experiment example in Code/learning/Data)
+The obtained flux levels can then be extracted and used to create a complete dataset (see our experiment example in [Code/learning/Data](Code/learning/Data)).
+
+#### Matlab dependencies
+
+* [The COBRA toolbox](https://opencobra.github.io/cobratoolbox/latest/)
 
 
-### Deep Learning Approach
+### Machine Learning
 
-In order to run the deep learning models three zip files need to be extracted: 
+All the material for reproducing the machine learning tests is in [Code/learning](Code/learning).
 
-* Code/learning/Data/CompleteDataset.csv
+To build the predictive models, three data files included in [Code/learning/Data](Code/learning/Data) first have to be extracted: 
 
-* Code/learning/Data/Reduced_Dataset.csv
+* CompleteDataset.csv.zip - It contains gene expression, metabolic flux and growth rate data.
+* Reduced_Dataset.zip - It contains gene expression, metabolic flux and metabolic gene expression data in distinct files.
+* features.zip - It contains the features selected by the three methods listed above.
 
-* Code/learning/Data/features.csv
+The R script machineLearning.R trains and applies all the feature selection and machine learning approaches, except for the deep neural networks. This script has been tested with R 3.4 and can be run by first putting the data in the same folder. 
 
-#### Requirements:
+#### R dependencies
 
+The script machineLearning.R requires that the libraries listed at the top are installed to ensure it runs to completion. In particular, implementations of the machine learning methods used are in:
+
+* caret
+* nsga2R
+* SGL
+* iRF
+* [bemkl](https://github.com/mehmetgonen/bemkl)
+
+
+### Deep Learning
+
+A separate Python script is dedicated to training and testing the deep learning models. Once the datasets in [Code/learning/Data](Code/learning/Data) have been extracted, run DeepLearningFullSet.py to build the deep learning models and obtain their set of results. 
+
+#### Python dependencies
+
+The deep learning code has been tested with the following libraries:
 * Python 3.5
-
 * Tensorflow 2.0 
-
 * Keras 2.0
-
 * Numpy 1.5
-
 * Pandas 0.25
-
-* Seaborn 0.9
-
 * Matplotlib 3.1.1
-
-
-To run the deep learning models - once these datasets have been extracted - simply run the python file Code/learning/DeepLearningFullSet.py to see the set of results. 
-
-
-### Tradtional Machine Learning Approaches
-
-The R file Code/learning/machineLearning.R contains the feature selection and traditional machine learning approaches (random forest and support vector regression models) which can be run by first setting your workstation to point its data collection to Code/learning/Data and then running the complete code. 
-
-This code requires that the libraries listed at the top of the code first be installed to ensure it runs to completion.
-
+* Seaborn 0.9
 
 
 
