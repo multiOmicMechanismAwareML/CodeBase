@@ -48,6 +48,8 @@ To calculate the metabolic fluxes for all yeast strains, run RUN.m. This will au
 
 The obtained flux levels can then be extracted and used to create a complete dataset (see our experiment example in [Code/learning/Data](Code/learning/Data)).
 
+Approx running time: 24 hours - this code will re-run the modelling process
+
 #### Matlab dependencies
 
 * [The COBRA toolbox](https://opencobra.github.io/cobratoolbox/latest/)
@@ -65,6 +67,8 @@ To build the predictive models, three data files included in [Code/learning/Data
 
 The R script machineLearning.R trains and applies all the feature selection and machine learning approaches, except for the deep neural networks. This script has been tested with R 3.4 and can be run by first putting the data in the same folder. 
 
+Approx running time: 6 hours (this code will re-train) 
+
 #### R dependencies
 
 The script machineLearning.R requires that the libraries listed at the top are installed to ensure it runs to completion. In particular, implementations of the machine learning methods used are in:
@@ -79,6 +83,8 @@ The script machineLearning.R requires that the libraries listed at the top are i
 ### Deep Learning
 
 A separate Python script is dedicated to training and testing the deep learning models. Once the datasets in [Code/learning/Data](Code/learning/Data) have been extracted, run DeepLearningFullSet.py to build the deep learning models and obtain their set of results. 
+
+Approx running time: 10 mins - for the inference element 
 
 #### Python dependencies
 
