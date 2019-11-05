@@ -67,7 +67,7 @@ To build the predictive models, three data files included in [Code/learning/Data
 
 The R script machineLearning.R trains and applies all the feature selection and machine learning approaches, except for the deep neural networks. This script has been tested with R 3.4 and can be run by first putting the data in the same folder. 
 
-Approx running time: 6 hours (this code will re-train) 
+Approx running time: 6 hours - this code will re-train
 
 #### R dependencies
 
@@ -84,7 +84,7 @@ The script machineLearning.R requires that the libraries listed at the top are i
 
 A separate Python script is dedicated to training and testing the deep learning models. Once the datasets in [Code/learning/Data](Code/learning/Data) have been extracted, run DeepLearningFullSet.py to build the deep learning models and obtain their set of results. 
 
-Approx running time: 10 mins - for the inference element 
+Approx running time: 10 mins - for the inference component
 
 #### Python dependencies
 
