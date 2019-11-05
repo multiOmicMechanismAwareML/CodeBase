@@ -67,7 +67,7 @@ To build the predictive models, three data files included in [Code/learning/Data
 
 The R script machineLearning.R trains and applies all the feature selection and machine learning approaches, except for the deep neural networks. This script has been tested with R 3.4 and can be run by first putting the data in the same folder. 
 
-Approx running time: 6 hours - this code will re-train
+Approx running time: 6 hours - this code will run feature selection and re-train the traditional models
 
 #### R dependencies
 
