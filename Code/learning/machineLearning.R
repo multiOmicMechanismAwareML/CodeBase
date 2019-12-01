@@ -4,10 +4,7 @@ library(nsga2R)
 library(tidyverse)
 library(kernlab)
 library(ranger)
-library(Boruta)
-library(ggExtra)
 library(ggplot2)
-library(vioplot)
 library(parallel)
 library(lattice)
 library(randomForest)
@@ -15,7 +12,6 @@ library(mlbench)
 library(foreach)
 library(GenAlgo)
 library(iterators)
-library(doParallel)
 library(gridExtra)
 library(caret)
 library(stringr)
@@ -24,7 +20,6 @@ library(Metrics)
 library(iRF)
 library(cluster)
 library(doSNOW)
-library(e1071)
 library(doMC)
 library(purrr)
 library(dplyr)
@@ -218,51 +213,13 @@ print(state$be$mu[-1])
 #perform prediction
 prediction <- bemkl_supervised_regression_variational_test(Ktest, state)
 RMSE <- postResample(prediction$y$mu, testingTarget)["RMSE"]
-plot(prediction$y$mu, testingTarget)
+
 
 
 #################################################################################################################
 #### Genetic Algorithms #########################################################################################
 
 
-#single objective #########################################################################################
-
-#mutation function is a simple sample of one of the features available 
-mutation.function <- function(allele, context){
-  sample(1:ncol(normalisedTrainingData),1)
-}
-
-#Fitness function uses k nearest neighbours results
-fitness.function <- function(acol, context){
-  num_vars <- first(acol)
-  if(num_vars > 100){
-    num_vars <- 1
-  }
-  context <- as.data.frame(context)
-  featureIndexes <- context[,acol[2:(2+num_vars)]]
-  modelRes <- train(featureIndexes,  trainingTarget,  method = "knn")
-  1 / last(modelRes$results$RMSE)
-}
-
-n.individuals <- 50 
-n.features <- 100
-y <- matrix(0, n.individuals, n.features + 1)
-
-#Setting up initial feature sets for each of the strands
-for (i in 1:n.individuals){
-  y[i,] <- c(sample(1:100,1) , sample(1:ncol(normalisedTrainingData),n.features))
-}
-
-genetic.algo <- GenAlg(y,
-                       fitness.function,
-                       mutation.function, 
-                       normalisedTrainingData,
-                       0.001,
-                       0.75)
-##Apply 200 iterations of the genetic algorithm
-for (i in 1:200) {
-   genetic.algo <- newGeneration(genetic.algo)
-}
 
 #multi objective #########################################################################################
 
@@ -571,151 +528,7 @@ rfsglRMSE <- sqrt(mse(rfsglPredictions, testingTarget ))
 
 
 
-
-##############Graphing the predictions 
-
-results <- results[-which(is.na(results$score)),]#removing na
-predictions <- model %>% predict(expressionTestingDataNum_FULL, batch_size = 64)
-predictions <- fullModel %>% predict(testingDataNum, batch_size = 64)
-
-
-makePredictionVsTargetGraph(predictions, "Neural Network Predicted Vs Actual")
-plotPredictedVsTargetScatter (predictions, "Neural Network Predicted Vs Actual")
-
-res <- results[which(results$score < 1) , ]
-
-ggplot(res, aes(x = as.factor(neurons), y = score)) +  geom_boxplot(fill = "red", color = "navy") +
-  labs(x = "#neurons", title = "Number of neurons impact on score")
-ggplot(res, aes(x = as.factor(hiddenLayers), y = score)) +  geom_boxplot(fill = "skyblue", color = "navy") +
-  labs(x = "#hidden layers", title = "Number of hidden layers impact on score")
- ggplot(res, aes(x = as.factor(l1), y = score)) +  geom_boxplot(fill = "red", color = "navy") + 
-   labs(x = "l1", title = "L1 value impact on score")
- ggplot(res, aes(x = as.factor(l2), y = score)) +  geom_boxplot(fill = "skyblue", color = "navy") +
-   labs(x = "l2", title ="L2 value impact on score")
-ggplot(res, aes(x = as.factor(dropout), y = score)) +  geom_boxplot(fill = "red", color = "navy") +
-  labs(x = "dropout", title ="Dropout value impact on score")
-ggplot(res, aes(x = as.factor(learningRate), y = score)) +  geom_boxplot(fill = "red", color = "navy") +
-  labs(x = "Learning Rate", title ="Learning rate value impact on score")
-
-
-plot(res$L_1, res$score)
-
-
-
 ################################GRAPHING CODE##############################################
-
-fullRes <- data.frame(dataSet = c("RiRF", "ConRFGE", "GE", "RSGL", "RNSG-ii", "RFl", "GEM", "M-M-ConRFGE", "M-M-ConRFGEM"), 
-              SVR =  c( 0.10817414, 0.12503786, 0.1013126,  0.11784976, 0.10723653, 0.1821303, 0.1136499, 0.123, 0.180573), 
-              RF = c(0.1196459,0.1249495,0.125415,0.1274888,0.1283582, 0.1858902577, 0.1289116, 0.1444265 , 0.1462621), 
-              DL = c(0.090471, 0.09970546757 , 0.0883939618955321, 0.1122497, 0.10214, 0.14860872457701954, 0.09769533324257944, 0.0887567899753492, 0.09247313790795857))
-
-#Scatter predicted vs actual (to see correlation)
-makePredictionVsTargetGraph <- function(predictions, graphtitle){
-  results <- data.frame(predictions, testingTarget)
-  ggplot(results, aes(x = results$testingTarget, y = results$predictions))+
-    geom_point( color = "red") + 
-    geom_smooth(method=lm, se=FALSE) +
-    labs(title = graphtitle , x = "Actual" , y = "Predicted") 
-    
-}
-
-#Dot predicted vs actual (to see the error sizes)
-plotPredictedVsTargetScatter <- function(predictions, graphtitle){
-  results <- data.frame(predictions, testingTarget)
-  ggplot(results, aes(x = c(1:length(testingTarget)) , y =  results$testingTarget)) +
-    geom_segment(aes (xend = c(1:length(testingTarget)) , yend = results$predictions, alpha = .05)) +
-    geom_point(aes(color = "red")) +
-    geom_point(aes(y = results$predictions) ,shape = 2, color = "blue") + 
-    xlab("Strain") +
-    labs(title = graphtitle) +
-    theme(legend.position='none', text = element_text(size=20)) +
-    ylab("Growth Rate")
-  
-}
-
-
-#Contour plot (used for playing with data visualisation formats)
-
-fullRes <- fullRes[order(fullRes$NN), ]
-p <- buildContour(
-                  c("SVR", "RF", "NN"),
-                  c( "Full", "Expression","iRF", "SGL", "NSGA-II"), 
-                  as.matrix(fullRes[,-1]), 
-                  "",
-                  "",
-                  "RMSE")
-
-#Create a dataset that creates separate entries for the ml approaches 
-dfm <- melt(fullRes[,c("dataSet", 'SVR','RF', "NN")],id.vars = 1)
-
-#Random forest result bar chart
-ggplot(dfm[which(dfm$variable == "RF"),], aes (x = dataSet, y = value , fill = dataSet )) +
-  geom_bar(aes(fill = dataSet),stat = "identity",position = "dodge") +
-  ylab("RF - RMSE") + 
-  xlab("") +
-  ggtitle("", subtitle = NULL) +
-  scale_fill_discrete(name="ML \n Algo") +
-  theme_minimal() + 
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-        axis.ticks = element_line(),
-        text = element_text(size=14),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), legend.position="none")
-
-#SVR results bar chart 
-ggplot(dfm[which(dfm$variable == "SVR"),], aes (x = dataSet, y = value , fill = dataSet )) +
-  geom_bar(aes(fill = dataSet),stat = "identity",position = "dodge") +
-  ylab("SVR - RMSE") + 
-  xlab("") +
-  ggtitle("", subtitle = NULL) +
-  scale_fill_discrete(name="ML \n Algo") +
-  theme_minimal() + 
-  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-        axis.ticks = element_line(),
-        text = element_text(size=14),
-        panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), legend.position="none")
-
-#Builds a contour plot 
-buildContour <- function(xi, yi, zi, xlab, ylab, measure){
-  f <- list(
-    family = "Courier New, monospace",
-    size = 12,
-    color = "#7f7f7f"
-  )
-  x <- list(
-    title = xlab,
-    titlefont = f,
-    showgrid = F
-  )
-  y <- list(
-    title = ylab,
-    titlefont = f,
-    showgrid = F
-  )
-  
-  plot_ly(
-    x = xi, 
-    y = yi,
-    z = zi, 
-
-    width = 800,
-    showscale = T,
-    type = "heatmap" ,
-    #autocontour= F ,
-    #contours= list(
-     # start=0.09,
-    #  end= 0.13,
-    #  size=0.0025,
-    #  showlabels = F
-    #)
-    
-    text = zi
-  ) %>%
-    colorbar(title = measure) %>%
-    layout(xaxis = x, yaxis = y, text = "a", font = f,  margin = 150
-    ) 
-    
-  
-}
 
 #Graph the biomass flux rates vs the experimental growth rates 
 d <- data.frame(doubling_time = growth, biomass_flux = data[,biomassIndex] )
@@ -733,104 +546,3 @@ cor <- d %>% ggplot(aes( x = biomass_flux, y = doubling_time)) +
         text = element_text(size=14),
         panel.grid.minor = element_blank(), axis.line = element_line(colour = "black"), legend.position="none") +
         labs(x = "Biomass Reaction Flux", y = "Experimental Doubling Time \n log(strain/w.t)")
-
-####################################################################################################
-#Circular bar graph ################################################################################
-####################################################################################################
-
-
-empty_bar=2
-to_add = data.frame( matrix(NA, empty_bar*nlevels(dfm$dataSet), ncol(dfm)) )
-colnames(to_add) = colnames(dfm)
-to_add$dataSet=rep(levels(dfm$dataSet), each=empty_bar)
-data=rbind(dfm, to_add)
-data <- data %>% arrange(dataSet, value)
-
-data$id=seq(1, nrow(data))
-# Get the name and the y position of each label
-label_data=data
-number_of_bar=nrow(label_data)
-angle= 90 - 360 * (label_data$id-1.5) /number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
-label_data$hjust<-ifelse( angle < -90, 2, -1)
-label_data$angle<-ifelse(angle < -90, angle+180, angle)
-
-# prepare a data frame for base lines
-base_data=data %>% 
-  group_by(dataSet) %>% 
-  summarize(start=min(id), end=max(id) - empty_bar) %>% 
-  rowwise() %>% 
-  mutate(title=mean(c(start, end)))
-
-base_data[5,2:4] <- c(21,22,21.5)
-base_data[4,2:4] <- c(16,17,16.5)
-base_data[3,2:4] <- c(11,12,11.5)
-
-# prepare a data frame for grid (scales)
-grid_data = base_data
-grid_data$end = grid_data$end[ c( nrow(grid_data), 1:nrow(grid_data)-1)] + 1
-grid_data$start = grid_data$start - 1
-grid_data=grid_data[-1,]
-
-# Make the plot
-p = ggplot(data, aes(x=as.factor(id), y=value, fill=dataSet)) +       # Note that id is a factor. If x is numeric, there is some space between the first bar
-  
-  geom_bar(aes(x=as.factor(id), y=value, fill=dataSet), stat="identity", alpha=0.5) +
-  
-  # Add a val=100/75/50/25 lines. I do it at the beginning to make sur barplots are OVER it.
-  geom_segment(data=grid_data, aes(x = end, y = 0.15, xend = start, yend = 0.15), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
-  geom_segment(data=grid_data, aes(x = end, y = 0.1, xend = start, yend = 0.1), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
-  geom_segment(data=grid_data, aes(x = end, y = 0.05, xend = start, yend = 0.05), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
- geom_segment(data=grid_data, aes(x = end, y = 0, xend = start, yend = 0), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
-  
-  # Add text showing the value of each 100/75/50/25 lines
-  annotate("text", x = rep(max(data$id),4), y = c(0, 0.05, 0.1, 0.15), label = c("0", "0.05", "0.1", "0.15") , color="grey", size=3 , angle=0, fontface="bold", hjust=1) +
-  
-  geom_bar(aes(x=as.factor(id), y=value, fill=dataSet), stat="identity", alpha=0.5) +
-  ylim(-0.1,0.15) +
-  theme_minimal() +
-  theme(
-    legend.position = "none",
-    axis.text = element_blank(),
-    axis.title = element_blank(),
-    panel.grid = element_blank(),
-    plot.margin = unit(rep(-1,4), "cm") 
-  ) +
-  coord_polar() + 
-  geom_text(data=label_data, aes(x=label_data$id,
-                                 y=label_data$value,
-                                 hjust=hjust,
-                                 label= label_data$variable),
-            color="black", 
-            fontface="bold",
-            alpha=0.6,
-            size=2.5, 
-            angle= label_data$angle, 
-            inherit.aes = FALSE ) +
-  
-  # Add base line information
-  geom_segment(data=base_data, aes(x = base_data$start, y = -0, xend = base_data$end, yend = -0), colour = "black", size=0.8 , inherit.aes = FALSE ) +
-  geom_text(data=base_data, aes(x = base_data$title, y = -0.03, label=base_data$dataSet),colour = "black", alpha=0.8, size=2, fontface="bold", inherit.aes = FALSE)
-
-
-
-#Creates Dot graph of full results
-dotGraph <- plot_ly(fullRes, x = ~SVR, y = ~dataSet, name = "SVR", type = 'scatter',
-             mode = "markers",  marker = list(size = 20, color = 'rgba(76, 162, 228, .9)',
-                                              line = list(color = 'rgba(7,100, 171, .8)',
-                                                          width = 2))) %>%
-  add_trace(x = ~RF, y = ~dataSet, name = "RF",type = 'scatter',
-            mode = "markers",  marker = list(size = 20, color = 'rgba(127, 0, 255, .9)',
-                                             line = list(color = 'rgba(76, 0, 153, .8)',
-                                                         width = 2))) %>%
-  add_trace(x = ~DL, y = ~dataSet, name = "DL",type = 'scatter',
-            mode = "markers", marker = list(size = 20, color = 'rgba(192, 134, 0, .9)',
-                                            line = list(color = 'rgba(88, 63, 5, .8)',
-                                                        width = 2))) %>%
-  layout(
-    xaxis = list(title = "RMSE", showgrid = F, size = 14),
-    yaxis = list(title = "",size = 14, showgrid = F),
-    margin = list(l = 100)
-    )
-  
-
-
