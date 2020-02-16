@@ -1,6 +1,6 @@
 function [v1, f_out] = evaluate_objective(gammaVal, x,NumberOfObjectives,NumberOfGenes,fbarecon,geni,reaction_expression, pos_genes_in_react_expr, ixs_geni_sorted_by_length,lowbound,deletedGeneIndex)
 
-yt=x';     
+yt=x';
 
 eval_reaction_expression = reaction_expression;
 
@@ -26,7 +26,7 @@ gamma = zeros(1,length(reaction_expression));
 
 for i=1:length(num_reaction_expression)
     str = eval_reaction_expression{i};
-
+    
     num_parenthesis = numel(strfind(str,')'));
     while (num_parenthesis > 32) %if there are more than 32 parentheses, matlab is unable to run EVAL. So we need to reduce these parentheses manually by starting to eval smaller pieces of the string
         to_replace = 'min.\d*+\.+\d*,\d*+\.+\d*.|max.\d*+\.+\d*,\d*+\.+\d*.|min..\d*+\.+\d*.,\d*+\.+\d*.|max..\d*+\.+\d*.,\d*+\.+\d*.|min..\d*+\.+\d*.,.\d*+\.+\d*..|max..\d*+\.+\d*.,.\d*+\.+\d*..|min.\d*+\.+\d*,.\d*+\.+\d*..|max.\d*+\.+\d*,.\d*+\.+\d*..';  %searches for all the strings of kind min(NUM.NUM,NUM.NUM) or max(NUM.NUM,NUM.NUM) or  min((NUM.NUM),NUM.NUM) or max((NUM.NUM),NUM.NUM) or  min((NUM.NUM),(NUM.NUM)) or max(NUM.NUM,(NUM.NUM)) or  min(NUM.NUM,(NUM.NUM)) or max((NUM.NUM),(NUM.NUM))
@@ -39,18 +39,18 @@ for i=1:length(num_reaction_expression)
                 str = strrep(str,ss_rep,num2str(eval(ss_rep),'%.15f'));
             end
             num_parenthesis = numel(strfind(str,')'));
-       end
+        end
     end
-
+    
     str = regexprep(str,'/','');
-
-     try
+    
+    try
         num_reaction_expression(i) = eval(str);   %evaluates the cells like they are numerical expressions (so as to compute min and max of gene expressions)
-     catch
-         %i
-         %warning('Problem using function.  Assigning a value of 1.');
-         num_reaction_expression(i) = 1;
-     end
+    catch
+        %i
+        %warning('Problem using function.  Assigning a value of 1.');
+        num_reaction_expression(i) = 1;
+    end
 end
 
 % Try different values for these -> [-3 3]
@@ -58,31 +58,29 @@ gamma = gammaVal *  ones(1,length(reaction_expression));
 
 
 if reactionIndexesWithDeletedGene
-reactionsWithDeletedGene = num_reaction_expression(reactionIndexesWithDeletedGene);
-num_reaction_expression(reactionIndexesWithDeletedGene) = nan;
+    reactionsWithDeletedGene = num_reaction_expression(reactionIndexesWithDeletedGene);
+    num_reaction_expression(reactionIndexesWithDeletedGene) = nan;
 end
 reaction_expressionUpCorrected = prctile(num_reaction_expression,99);
 num_reaction_expression(num_reaction_expression > reaction_expressionUpCorrected) = reaction_expressionUpCorrected;
 if lowbound > 0
-reaction_expressionLowCorrected = prctile(num_reaction_expression, lowbound);
-num_reaction_expression(num_reaction_expression > reaction_expressionLowCorrected) = reaction_expressionLowCorrected;
+    reaction_expressionLowCorrected = prctile(num_reaction_expression, lowbound);
+    num_reaction_expression(num_reaction_expression > reaction_expressionLowCorrected) = reaction_expressionLowCorrected;
 end
 if reactionIndexesWithDeletedGene
-num_reaction_expression(reactionIndexesWithDeletedGene) = reactionsWithDeletedGene;
+    num_reaction_expression(reactionIndexesWithDeletedGene) = reactionsWithDeletedGene;
 end
 
 
 
 
-for i=1:length(num_reaction_expression)   % Loop over the array of the geneset expressions
-
-        fbarecon.lb(i) = fbarecon.lb(i)*(num_reaction_expression(i)^gamma(i));
-        fbarecon.ub(i) = fbarecon.ub(i)*(num_reaction_expression(i)^gamma(i));
-
+for i=1:length(num_reaction_expression)   % Loop over the array of the geneset expressions 
+    fbarecon.lb(i) = fbarecon.lb(i)*(num_reaction_expression(i)^gamma(i));
+    fbarecon.ub(i) = fbarecon.ub(i)*(num_reaction_expression(i)^gamma(i)); 
 end
 
 
-% Min norm run through
+% Min-norm run through
 [solution] = optimizeCbModel(fbarecon, 'max',  'one', 1e-6);
 f_out(1) = solution.f;
 f_out(2) = solution.f;
