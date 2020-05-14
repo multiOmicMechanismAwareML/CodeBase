@@ -45,7 +45,7 @@ Generalisation tested using an experimentally independent test set (Sameith 2015
 
 ### Metabolic Modelling 
 
-The metabobolic modelling code is in [Code/metabolic_modelling](Code/metabolic_modelling) and has been tested in Matlab R2015b. 
+The metabobolic modelling code is in [Code/Metabolic_Modelling](Code/Metabolic_Modelling) and has been tested in Matlab R2015b. 
 
 To calculate the metabolic fluxes for all yeast strains, run RUN.m. This will automatically start the FBA process using the gene expression data in msbdataAltered.mat and the metabolic model in yeastmm.mat. 
 
