@@ -49,7 +49,7 @@ The metabobolic modelling code is in [Code/metabolic_modelling](Code/metabolic_m
 
 To calculate the metabolic fluxes for all yeast strains, run RUN.m. This will automatically start the FBA process using the gene expression data in msbdataAltered.mat and the metabolic model in yeastmm.mat. 
 
-The obtained flux levels can then be extracted and used to create a complete dataset (see our experiment example in [Code/learning/Data](Code/learning/Data)).
+The obtained flux levels can then be extracted and used to create a complete dataset 
 
 Approx running time: 24 hours - this code will re-run the modelling process
 
