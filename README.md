@@ -64,7 +64,7 @@ All the material for reproducing the machine learning tests is in [Code/Machine_
 
 To build the predictive models, all the dataset files are located in [Code/Machine_Learning/data](Code/Machine_Learning/data) 
 
-The R script ML_Code.R trains and applies all the machine learning approaches (SVR, RF, BEMKL), except for the deep neural networks. This script has been tested with R 3.4 and can be run by first putting the data in the same folder. 
+The R script ML_Code.R trains and applies all the machine learning approaches (SVR, RF, BEMKL), except for the deep neural networks. This script has been tested with R 3.4 and can be run by simply calling Code/Machine_Learning/ML_Code.R. 
 
 Approx running time: 6 hours - this code will run utilising the features selected by the feature selection techniques (the code to re-calculate these is inside the Code/feature_selection folder) and re-train the non-deep-learning models
 
