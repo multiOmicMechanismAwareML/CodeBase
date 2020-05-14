@@ -37,6 +37,9 @@ Their multi-view counterparts are:
 * Bagged random forest
 * Multi-modal deep neural networks
 
+**Step five:**
+
+Generalisation tested using an experimentally independent test set (Sameith 2015)
 
 ## Files and requirements
 
