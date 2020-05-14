@@ -39,7 +39,7 @@ Their multi-view counterparts are:
 
 **Step five:**
 
-Generalisation tested using an experimentally independent test set (Sameith 2015)
+Generalisation tested using an experimentally independent test set (Sameith 2015), some feature imputation is also included to ensure the data is consistent with the MSB data. 
 
 ## Files and requirements
 
