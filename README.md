@@ -47,11 +47,11 @@ Generalisation tested using an experimentally independent test set (Sameith 2015
 
 The metabobolic modelling code is in [Code/Metabolic_Modelling](Code/Metabolic_Modelling) and has been tested in Matlab R2015b. 
 
-To calculate the metabolic fluxes for all yeast strains, run RUN.m. This will automatically start the FBA process using the gene expression data in msbdataAltered.mat and the metabolic model in yeastmm.mat. 
+To calculate the metabolic fluxes for all yeast strains, run RUN.m. This will automatically start the FBA process using the gene expression data in msbdataAltered.mat and the metabolic model in iSce926.mat. 
 
 The obtained flux levels can then be extracted and used to create a complete dataset 
 
-Approx running time: 24 hours - this code will re-run the modelling process
+Approx running time: ~3 hours - this code will re-run the modelling process
 
 #### Matlab dependencies
 
@@ -83,7 +83,7 @@ The script machineLearning.R requires that the libraries listed at the top are i
 
 A separate Python script is dedicated to training and testing the deep learning models. To re-run the experiments simply call DL_Code.py. This also includes the SHAP analysis calculations for feature importance and the experimentally independent test-set tests.
 
-Approx running time: 5 days for full training
+Approx running time: 3 days for full training
 
 #### Python dependencies
 
