@@ -57,17 +57,13 @@ Approx running time: 24 hours - this code will re-run the modelling process
 
 ### Machine Learning
 
-All the material for reproducing the machine learning tests is in [Code/learning](Code/learning).
+All the material for reproducing the machine learning tests is in [Code/Machine_Learning](Code/Machine_Learning).
 
-To build the predictive models, three data files included in [Code/learning/Data](Code/learning/Data) first have to be extracted: 
+To build the predictive models, all the dataset files are located in [Code/Machine_Learning/aata](Code/Machine_Learning) 
 
-* CompleteDataset.csv.zip - It contains gene expression, metabolic flux and growth rate data.
-* Reduced_Dataset.zip - It contains gene expression, metabolic flux and metabolic gene expression data in distinct files.
-* features.zip - It contains the features selected by the three methods listed above.
+The R script ML_Code.R trains and applies all the machine learning approaches (SVR, RF, BEMKL), except for the deep neural networks. This script has been tested with R 3.4 and can be run by first putting the data in the same folder. 
 
-The R script machineLearning.R trains and applies all the feature selection and machine learning approaches, except for the deep neural networks. This script has been tested with R 3.4 and can be run by first putting the data in the same folder. 
-
-Approx running time: 6 hours - this code will run feature selection and re-train the non-deep-learning models
+Approx running time: 6 hours - this code will run utilising the features selected by the feature selection techniques (the code to re-calculate these is inside the Code/feature_selection folder) and re-train the non-deep-learning models
 
 #### R dependencies
 
@@ -77,14 +73,14 @@ The script machineLearning.R requires that the libraries listed at the top are i
 * nsga2R
 * SGL
 * iRF
-* [bemkl](https://github.com/mehmetgonen/bemkl)
+* [bemkl](https://github.com/mehmetgonen/bemkl) - This file is included in the repo
 
 
 ### Deep Learning
 
-A separate Python script is dedicated to training and testing the deep learning models. Once the datasets in [Code/learning/Data](Code/learning/Data) have been extracted, run DeepLearningFullSet.py to build the deep learning models and obtain their set of results. 
+A separate Python script is dedicated to training and testing the deep learning models. To re-run the experiments simply call DL_Code.py. This also includes the SHAP analysis calculations for feature importance and the experimentally independent test-set tests.
 
-Approx running time: 10 mins - for the inference component
+Approx running time: 5 days for full training
 
 #### Python dependencies
 
