@@ -13,7 +13,7 @@ The msb145172 dataset (Duibhir et al., 2014) is used to create strain-specific m
 
 **Step two:**
 
-Norm-2 regularised flux balance analysis is utilised to simulate the metabolic activity and obtain strain-specific reaction fluxes.
+Parsimonious flux balance analysis is utilised to simulate the metabolic activity and obtain strain-specific reaction fluxes.
 
 **Step three:**
 
